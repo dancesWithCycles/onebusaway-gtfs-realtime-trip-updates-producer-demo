@@ -28,10 +28,9 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.Parser;
 import org.onebusaway.cli.CommandLineInterfaceLibrary;
 import org.onebusaway.guice.jsr250.LifecycleService;
-import org.onebusway.gtfs_realtime.exporter.TripUpdatesFileWriter;
-import org.onebusway.gtfs_realtime.exporter.TripUpdatesServlet;
-import org.onebusway.gtfs_realtime.exporter.VehiclePositionsFileWriter;
-import org.onebusway.gtfs_realtime.exporter.VehiclePositionsServlet;
+import org.onebusaway.gtfs_realtime.exporter.GtfsRealtimeFileWriter;
+import org.onebusaway.gtfs_realtime.exporter.GtfsRealtimeServlet;
+import org.onebusaway.gtfs_realtime.exporter.GtfsRealtimeSource;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -46,6 +45,10 @@ public class GtfsRealtimeTripUpdatesProducerDemoMain {
   private static final String ARG_VEHICLE_POSITIONS_PATH = "vehiclePositionsPath";
 
   private static final String ARG_VEHICLE_POSITIONS_URL = "vehiclePositionsUrl";
+
+  private GtfsRealtimeSource _vehiclePositionsSource;
+
+  private GtfsRealtimeSource _tripUpdatesSource;
 
   public static void main(String[] args) throws Exception {
     GtfsRealtimeTripUpdatesProducerDemoMain m = new GtfsRealtimeTripUpdatesProducerDemoMain();
@@ -64,6 +67,18 @@ public class GtfsRealtimeTripUpdatesProducerDemoMain {
   @Inject
   public void setLifecycleService(LifecycleService lifecycleService) {
     _lifecycleService = lifecycleService;
+  }
+
+  @Inject
+  public void setTripUpdatesSource(@TripUpdates
+                                           GtfsRealtimeSource tripUpdatesSource) {
+    _tripUpdatesSource = tripUpdatesSource;
+  }
+
+  @Inject
+  public void setVehiclePositionsSource(@VehiclePositions
+                                                GtfsRealtimeSource vehiclePositionsSource) {
+    _vehiclePositionsSource = vehiclePositionsSource;
   }
 
   public void run(String[] args) throws Exception {
@@ -87,25 +102,26 @@ public class GtfsRealtimeTripUpdatesProducerDemoMain {
     _provider.setUrl(new URL("http://www3.septa.org/hackathon/TrainView/"));
 
     if (cli.hasOption(ARG_TRIP_UPDATES_URL)) {
-      URL url = new URL(cli.getOptionValue(ARG_TRIP_UPDATES_URL));
-      TripUpdatesServlet servlet = injector.getInstance(TripUpdatesServlet.class);
-      servlet.setUrl(url);
+      GtfsRealtimeServlet servlet = injector.getInstance(GtfsRealtimeServlet.class);
+      servlet.setSource(_tripUpdatesSource);
+      servlet.setUrl(new URL(cli.getOptionValue(ARG_TRIP_UPDATES_URL)));
     }
     if (cli.hasOption(ARG_TRIP_UPDATES_PATH)) {
-      File path = new File(cli.getOptionValue(ARG_TRIP_UPDATES_PATH));
-      TripUpdatesFileWriter writer = injector.getInstance(TripUpdatesFileWriter.class);
-      writer.setPath(path);
+      GtfsRealtimeFileWriter fileWriter = injector.getInstance(GtfsRealtimeFileWriter.class);
+      fileWriter.setSource(_tripUpdatesSource);
+      fileWriter.setPath(new File(cli.getOptionValue(ARG_TRIP_UPDATES_PATH)));
     }
 
     if (cli.hasOption(ARG_VEHICLE_POSITIONS_URL)) {
-      URL url = new URL(cli.getOptionValue(ARG_VEHICLE_POSITIONS_URL));
-      VehiclePositionsServlet servlet = injector.getInstance(VehiclePositionsServlet.class);
-      servlet.setUrl(url);
+      GtfsRealtimeServlet servlet = injector.getInstance(GtfsRealtimeServlet.class);
+      servlet.setSource(_vehiclePositionsSource);
+      servlet.setUrl(new URL(cli.getOptionValue(ARG_VEHICLE_POSITIONS_URL)));
     }
     if (cli.hasOption(ARG_VEHICLE_POSITIONS_PATH)) {
-      File path = new File(cli.getOptionValue(ARG_VEHICLE_POSITIONS_PATH));
-      VehiclePositionsFileWriter writer = injector.getInstance(VehiclePositionsFileWriter.class);
-      writer.setPath(path);
+      GtfsRealtimeFileWriter fileWriter = injector.getInstance(GtfsRealtimeFileWriter.class);
+      fileWriter.setSource(_vehiclePositionsSource);
+      fileWriter.setPath(new File(
+              cli.getOptionValue(ARG_VEHICLE_POSITIONS_PATH)));
     }
 
     _lifecycleService.start();

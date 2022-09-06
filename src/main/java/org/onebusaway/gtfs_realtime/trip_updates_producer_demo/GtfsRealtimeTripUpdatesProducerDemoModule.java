@@ -18,7 +18,7 @@ package org.onebusaway.gtfs_realtime.trip_updates_producer_demo;
 import java.util.Set;
 
 import org.onebusaway.guice.jsr250.JSR250Module;
-import org.onebusway.gtfs_realtime.exporter.GtfsRealtimeExporterModule;
+import org.onebusaway.gtfs_realtime.exporter.GtfsRealtimeExporterModule;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;

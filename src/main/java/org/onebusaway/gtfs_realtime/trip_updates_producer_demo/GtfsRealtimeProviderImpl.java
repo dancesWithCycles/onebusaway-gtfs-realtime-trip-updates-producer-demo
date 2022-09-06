@@ -32,10 +32,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import org.onebusway.gtfs_realtime.exporter.GtfsRealtimeExporterModule;
-import org.onebusway.gtfs_realtime.exporter.GtfsRealtimeLibrary;
-import org.onebusway.gtfs_realtime.exporter.GtfsRealtimeMutableProvider;
-import org.onebusway.gtfs_realtime.exporter.GtfsRealtimeProvider;
+import org.onebusaway.gtfs_realtime.exporter.GtfsRealtimeExporterModule;
+import org.onebusaway.gtfs_realtime.exporter.GtfsRealtimeLibrary;
+import org.onebusaway.gtfs_realtime.exporter.GtfsRealtimeMutableProvider;
+import org.onebusaway.gtfs_realtime.exporter.GtfsRealtimeProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
