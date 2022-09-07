@@ -140,11 +140,11 @@ public class GtfsRealtimeProviderImpl {
      * connect to pg
      */
     //connection URL for the postgres database
-    String host = "localhost";
-    String port = "5432";
-    String db = "lct_msg";
-    String usr = "begerad";
-    String key = "!nwndngsntwcklr2022";
+    String host = "host";
+    String port = "port";
+    String db = "db";
+    String usr = "usr";
+    String key = "key";
 
     PgConnection pgCon = new PgConnection(host, port, db, usr, key);
 
