@@ -49,6 +49,11 @@ import com.google.transit.realtime.GtfsRealtime.TripUpdate.StopTimeUpdate;
 import com.google.transit.realtime.GtfsRealtime.VehicleDescriptor;
 import com.google.transit.realtime.GtfsRealtime.VehiclePosition;
 
+import de.swingbe.ifleet.controller.PgConnection;
+import de.swingbe.ifleet.controller.PgPrepStatement;
+
+import java.util.ArrayList;
+
 /**
  * This class produces GTFS-realtime trip updates and vehicle positions by
  * periodically polling the custom SEPTA vehicle data API and converting the
@@ -132,9 +137,28 @@ public class GtfsRealtimeProviderImpl {
   private void refreshVehicles() throws IOException, JSONException {
 
     /**
-     * We download the vehicle details as an array of JSON objects.
+     * connect to pg
      */
-    JSONArray vehicleArray = downloadVehicleDetails();
+    //connection URL for the postgres database
+    String host = "localhost";
+    String port = "5432";
+    String db = "lct_msg";
+    String usr = "begerad";
+    String key = "!nwndngsntwcklr2022";
+
+    PgConnection pgCon = new PgConnection(host, port, db, usr, key);
+
+    if (pgCon.getConnection() == null) {
+      pgCon.setConnection();
+      System.out.println("main() pgCon set");
+    }
+
+    PgPrepStatement pgPrepStatement = new PgPrepStatement(pgCon);
+
+    /**
+     * get location messages by date, tenant and trip
+     */
+    ArrayList<ArrayList<String>> aryLctMsgs = pgPrepStatement.get("%","%GER%","12:00:1%","%");
 
     /**
      * The FeedMessage.Builder is what we will use to build up our GTFS-realtime
@@ -146,15 +170,23 @@ public class GtfsRealtimeProviderImpl {
     /**
      * We iterate over every JSON vehicle object.
      */
-    for (int i = 0; i < vehicleArray.length(); ++i) {
+    for (int i = 0; i < aryLctMsgs.size(); ++i) {
 
-      JSONObject obj = vehicleArray.getJSONObject(i);
-      String trainNumber = obj.getString("trainno");
-      String route = obj.getString("dest");
-      String stopId = obj.getString("nextstop");
-      double lat = obj.getDouble("lat");
-      double lon = obj.getDouble("lon");
-      int delay = obj.getInt("late");
+      ArrayList<String> aryRecord = aryLctMsgs.get(i);
+      String trip=aryRecord.get(0);
+      String tenant=aryRecord.get(1);
+      //TODO CLEAN UP String date=aryRecord.get(2);
+      //TODO CLEAN UP String time=aryRecord.get(3);
+      String stopId = "stopId";
+      String strLat=aryRecord.get(4);
+      String strLon=aryRecord.get(5);
+      if(strLat.length()==0 || strLon.length()==0){
+        //TODO add exception handling
+        continue;
+      }
+      double lat = Double.parseDouble(strLat);
+      double lon = Double.parseDouble(strLon);
+      int delay = 1;
 
       /**
        * We construct a TripDescriptor and VehicleDescriptor, which will be used
@@ -164,10 +196,10 @@ public class GtfsRealtimeProviderImpl {
        * route id instead.
        */
       TripDescriptor.Builder tripDescriptor = TripDescriptor.newBuilder();
-      tripDescriptor.setRouteId(route);
+      tripDescriptor.setRouteId(trip);
 
       VehicleDescriptor.Builder vehicleDescriptor = VehicleDescriptor.newBuilder();
-      vehicleDescriptor.setId(trainNumber);
+      vehicleDescriptor.setId(tenant);
 
       /**
        * To construct our TripUpdate, we create a stop-time arrival event for
@@ -192,7 +224,7 @@ public class GtfsRealtimeProviderImpl {
        * GTFS-realtime trip updates feed.
        */
       FeedEntity.Builder tripUpdateEntity = FeedEntity.newBuilder();
-      tripUpdateEntity.setId(trainNumber);
+      tripUpdateEntity.setId(trip);
       tripUpdateEntity.setTripUpdate(tripUpdate);
       tripUpdates.addEntity(tripUpdateEntity);
 
@@ -216,7 +248,7 @@ public class GtfsRealtimeProviderImpl {
        * GTFS-realtime vehicle positions feed.
        */
       FeedEntity.Builder vehiclePositionEntity = FeedEntity.newBuilder();
-      vehiclePositionEntity.setId(trainNumber);
+      vehiclePositionEntity.setId(trip);
       vehiclePositionEntity.setVehicle(vehiclePosition);
       vehiclePositions.addEntity(vehiclePositionEntity);
     }
@@ -228,18 +260,6 @@ public class GtfsRealtimeProviderImpl {
     _gtfsRealtimeProvider.setVehiclePositions(vehiclePositions.build());
 
     _log.info("vehicles extracted: " + tripUpdates.getEntityCount());
-  }
-
-  /**
-   * @return a JSON array parsed from the data pulled from the SEPTA vehicle
-   *         data API.
-   */
-  private JSONArray downloadVehicleDetails() throws IOException, JSONException {
-    BufferedReader reader = new BufferedReader(new InputStreamReader(
-        _url.openStream()));
-    JSONTokener tokener = new JSONTokener(reader);
-    JSONArray vehiclesArray = new JSONArray(tokener);
-    return vehiclesArray;
   }
 
   /**
