@@ -143,6 +143,10 @@ public class GtfsRealtimeProviderImpl {
          * get location messages by date, tenant and trip
          */
         ArrayList<ArrayList<String>> aryLctMsgs = pgPrepStatement.get("%", "%GER%", "12:00:1%", "%", "%", "lct_msg_alb");
+        if (aryLctMsgs == null) {
+            _log.error("no reply from PostgreSQL API");
+            return;
+        }
 
         /**
          * The FeedMessage.Builder is what we will use to build up our GTFS-realtime
