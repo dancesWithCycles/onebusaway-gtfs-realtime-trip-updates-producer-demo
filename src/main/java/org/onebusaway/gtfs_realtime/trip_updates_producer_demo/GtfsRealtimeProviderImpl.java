@@ -142,7 +142,7 @@ public class GtfsRealtimeProviderImpl {
         /**
          * get location messages by date, tenant and trip
          */
-        ArrayList<ArrayList<String>> aryLctMsgs = pgPrepStatement.get("%", "%GER%", "12:00:1%", "%", "%", "lct_msg_alb");
+        ArrayList<ArrayList<String>> aryLctMsgs = pgPrepStatement.get("%", "%", "%", "%", "%", "lct_msg_alb");
         if (aryLctMsgs == null) {
             _log.error("no reply from PostgreSQL API");
             return;
