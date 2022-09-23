@@ -34,7 +34,10 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
 import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -122,6 +125,7 @@ public class GtfsRealtimeProviderImpl {
         /**
          * connect to pg
          */
+        //TODO Switch to config file
         //connection URL for the postgres database
         String host = "host";
         //TODO CLEAN UP String host = "localhost";
@@ -156,23 +160,26 @@ public class GtfsRealtimeProviderImpl {
         FeedMessage.Builder vehiclePositions = GtfsRealtimeLibrary.createFeedMessageBuilder();
 
         /**
-         * We iterate over every JSON vehicle object.
+         * We iterate over every LctMsgs object.
          */
         for (int i = 0; i < aryLctMsgs.size(); ++i) {
 
             ArrayList<String> aryRecord = aryLctMsgs.get(i);
-            String trip = aryRecord.get(0);
-            String route = aryRecord.get(1);
-            String tenant = aryRecord.get(2);
+            String lctMsgTrip = aryRecord.get(0);
+            String lctMsgRoute = aryRecord.get(1);
+            String lctMsgTenant = aryRecord.get(2);
+            String lctMsgDate = aryRecord.get(3);
+            String lctMsgTime = aryRecord.get(4);
+            String lctMsgLat = aryRecord.get(5);
+            String lctMsgLon = aryRecord.get(6);
             String stopId = "stopId";
-            String strLat = aryRecord.get(5);
-            String strLon = aryRecord.get(6);
-            if (strLat.length() == 0 || strLon.length() == 0) {
+            if (lctMsgLat.length() == 0 || lctMsgLon.length() == 0) {
                 //TODO add exception handling
-                continue;
+                lctMsgLat = "0";
+                lctMsgLon = "0";
             }
-            double lat = Double.parseDouble(strLat);
-            double lon = Double.parseDouble(strLon);
+            double lat = Double.parseDouble(lctMsgLat);
+            double lon = Double.parseDouble(lctMsgLon);
             int delay = 1;
 
             /**
@@ -183,11 +190,11 @@ public class GtfsRealtimeProviderImpl {
              * route id instead.
              */
             TripDescriptor.Builder tripDescriptor = TripDescriptor.newBuilder();
-            tripDescriptor.setTripId(trip);
-            tripDescriptor.setRouteId(route);
+            tripDescriptor.setTripId(lctMsgTrip);
+            tripDescriptor.setRouteId(lctMsgRoute);
 
             VehicleDescriptor.Builder vehicleDescriptor = VehicleDescriptor.newBuilder();
-            vehicleDescriptor.setId(tenant);
+            vehicleDescriptor.setId(lctMsgTenant);
 
             /**
              * To construct our TripUpdate, we create a stop-time arrival event for
@@ -212,7 +219,7 @@ public class GtfsRealtimeProviderImpl {
              * GTFS-realtime trip updates feed.
              */
             FeedEntity.Builder tripUpdateEntity = FeedEntity.newBuilder();
-            tripUpdateEntity.setId(trip);
+            tripUpdateEntity.setId(lctMsgTrip);
             tripUpdateEntity.setTripUpdate(tripUpdate);
             tripUpdates.addEntity(tripUpdateEntity);
 
@@ -232,14 +239,39 @@ public class GtfsRealtimeProviderImpl {
             vehiclePosition.setVehicle(vehicleDescriptor);
 
             /**
+             * set timestamp
+             * Moment at which the vehicle's position was measured. In POSIX time (i.e., number of seconds since January 1st 1970 00:00:00 UTC).
+             */
+            _log.debug("date: " + lctMsgDate);
+            _log.debug("time: " + lctMsgTime);
+            //date and time: "2022-09-23 13:26:32,573"
+            String timeAsString = lctMsgDate + lctMsgTime;
+            _log.debug("timeAsString: " + timeAsString);
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-ddHH:mm:ss,SSS");
+            Date dateAsDate = null;
+            try {
+                dateAsDate = simpleDateFormat.parse(timeAsString);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+            long epoch = dateAsDate.getTime();
+            _log.debug("epoch: " + epoch);
+            vehiclePosition.setTimestamp(epoch);
+
+            /**
              * Create a new feed entity to wrap the vehicle position and add it to the
              * GTFS-realtime vehicle positions feed.
              */
             FeedEntity.Builder vehiclePositionEntity = FeedEntity.newBuilder();
-            vehiclePositionEntity.setId(tenant);
+            vehiclePositionEntity.setId(lctMsgTenant);
             vehiclePositionEntity.setVehicle(vehiclePosition);
             vehiclePositions.addEntity(vehiclePositionEntity);
         }
+
+        /**
+         * set Header
+         */
+        //TODO Is this handled via the library? vehiclePositions.addHeader();
 
         /**
          * Build out the final GTFS-realtime feed messagse and save them.
