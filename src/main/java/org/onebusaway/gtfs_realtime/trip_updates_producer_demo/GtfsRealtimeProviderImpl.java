@@ -254,9 +254,40 @@ public class GtfsRealtimeProviderImpl {
             } catch (ParseException e) {
                 e.printStackTrace();
             }
-            long epoch = dateAsDate.getTime();
-            _log.debug("epoch: " + epoch);
-            vehiclePosition.setTimestamp(epoch);
+            _log.debug("dateAsDate: " + dateAsDate);
+            long lctMsgEpoch = dateAsDate.getTime();
+            _log.debug("lctMsgEpoch: " + lctMsgEpoch);
+            Date lctMsgEpochAsDate = new Date(lctMsgEpoch);
+            _log.debug("lctMsgEpochAsDate: " + lctMsgEpochAsDate);
+            vehiclePosition.setTimestamp(lctMsgEpoch);
+
+            /**
+             * compare LctMsg creation time with current time
+             */
+            // Get epoch timestamp using System.currentTimeMillis()
+            long currentTimestamp = System.currentTimeMillis();
+            Date currentTimestampAsDate = new Date(currentTimestamp);
+            _log.debug("currentTimestampAsDate: " + currentTimestampAsDate);
+            _log.debug("currentTimestamp: " + currentTimestamp);
+            long currentLctMsgEpochDiff = currentTimestamp - lctMsgEpoch;
+            _log.debug("currentEpochDiff: " + currentLctMsgEpochDiff);
+            long currentLctMsgEpochDiffSec = currentLctMsgEpochDiff / 1000;
+            _log.debug("currentLctMsgEpochDiffSec: " + currentLctMsgEpochDiffSec);
+            int countLctMsgAgeHour = 0;
+            if (currentLctMsgEpochDiffSec < 3600) {
+                countLctMsgAgeHour++;
+            }
+            _log.debug("countLctMsgAgeHour: " + countLctMsgAgeHour);
+            int countLctMsgAgeDay = 0;
+            if (currentLctMsgEpochDiffSec < 3600 * 24) {
+                countLctMsgAgeDay++;
+            }
+            _log.debug("countLctMsgAgeDay: " + countLctMsgAgeDay);
+            int countLctMsgAgeDay3 = 0;
+            if (currentLctMsgEpochDiffSec < 3600 * 24 * 3) {
+                countLctMsgAgeDay3++;
+            }
+            _log.debug("countLctMsgAgeDay3: " + countLctMsgAgeDay3);
 
             /**
              * Create a new feed entity to wrap the vehicle position and add it to the
