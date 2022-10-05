@@ -242,11 +242,11 @@ public class GtfsRealtimeProviderImpl {
              * set timestamp
              * Moment at which the vehicle's position was measured. In POSIX time (i.e., number of seconds since January 1st 1970 00:00:00 UTC).
              */
-            _log.debug("date: " + lctMsgDate);
-            _log.debug("time: " + lctMsgTime);
-            //date and time: "2022-09-23 13:26:32,573"
+            //_log.debug("date: " + lctMsgDate);
+            //_log.debug("time: " + lctMsgTime);
+            //date plus time: "2022-09-23 13:26:32,573"
             String timeAsString = lctMsgDate + lctMsgTime;
-            _log.debug("timeAsString: " + timeAsString);
+            //_log.debug("timeAsString: " + timeAsString);
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-ddHH:mm:ss,SSS");
             Date dateAsDate = null;
             try {
@@ -254,18 +254,41 @@ public class GtfsRealtimeProviderImpl {
             } catch (ParseException e) {
                 e.printStackTrace();
             }
+            //_log.debug("dateAsDate: " + dateAsDate.toString());
             long epoch = dateAsDate.getTime();
-            _log.debug("epoch: " + epoch);
-            vehiclePosition.setTimestamp(epoch);
+            //_log.debug("epoch: " + epoch);
 
             /**
-             * Create a new feed entity to wrap the vehicle position and add it to the
-             * GTFS-realtime vehicle positions feed.
+             * Moment at which the vehicle's position was measured. In POSIX time (i.e., number of seconds since January 1st 1970 00:00:00 UTC).
              */
-            FeedEntity.Builder vehiclePositionEntity = FeedEntity.newBuilder();
-            vehiclePositionEntity.setId(lctMsgTenant);
-            vehiclePositionEntity.setVehicle(vehiclePosition);
-            vehiclePositions.addEntity(vehiclePositionEntity);
+            //TODO Get hold of GPS timestamp instead of IVU network manager timestamp!
+            long epochGpsEstimation = epoch - 10;
+            //_log.debug("epochGpsEstimation: " + epochGpsEstimation);
+            vehiclePosition.setTimestamp(epochGpsEstimation);
+
+            /**
+             * Compare IVU network manager timestamp and current timestamp
+             */
+            long nowTs = System.currentTimeMillis();
+            //_log.debug("nowTs: " + nowTs);
+            long nowTsDiffEpoch = nowTs - epochGpsEstimation;
+            //_log.debug("nowTsDiffEpoch: " + nowTsDiffEpoch);
+
+            /**
+             * https://gtfs.org/realtime/best-practices/
+             * GTFS Realtime feeds should be refreshed at least once every 30 seconds, or whenever the information represented within the feed (position of a vehicle) changes
+             */
+            if (nowTsDiffEpoch <= 30000) {
+
+                /**
+                 * Create a new feed entity to wrap the vehicle position and add it to the
+                 * GTFS-realtime vehicle positions feed.
+                 */
+                FeedEntity.Builder vehiclePositionEntity = FeedEntity.newBuilder();
+                vehiclePositionEntity.setId(lctMsgTenant);
+                vehiclePositionEntity.setVehicle(vehiclePosition);
+                vehiclePositions.addEntity(vehiclePositionEntity);
+            }
         }
 
         /**
@@ -279,7 +302,8 @@ public class GtfsRealtimeProviderImpl {
         _gtfsRealtimeProvider.setTripUpdates(tripUpdates.build());
         _gtfsRealtimeProvider.setVehiclePositions(vehiclePositions.build());
 
-        _log.info("vehicles extracted: " + tripUpdates.getEntityCount());
+        _log.info("setTripUpdates count: " + tripUpdates.getEntityCount());
+        _log.info("setVehiclePositions count: " + vehiclePositions.getEntityCount());
     }
 
     /**
