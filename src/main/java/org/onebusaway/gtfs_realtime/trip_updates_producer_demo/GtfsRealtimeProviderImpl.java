@@ -66,9 +66,11 @@ public class GtfsRealtimeProviderImpl {
     private URL _url;
 
     /**
-     * How often vehicle data will be downloaded, in seconds.
+     * GTFS Realtime feeds should be refreshed at least once every 30 seconds, or whenever the information represented within the feed (position of a vehicle) changes, whichever is more frequent. VehiclePositions tend to change more frequently than other feed entities and should be updated as frequently as possible.
      */
-    private int _refreshInterval = 30;
+    //TODO Make this switch available via configuration!
+    //TODO  If the content has not changed, the feed should be updated with a new FeedHeader.timestamp reflecting that the information is still relevant as of that timestamp.
+    private int _refreshInterval = 5;
 
     @Inject
     public void setGtfsRealtimeProvider(GtfsRealtimeMutableProvider gtfsRealtimeProvider) {
@@ -276,9 +278,10 @@ public class GtfsRealtimeProviderImpl {
 
             /**
              * https://gtfs.org/realtime/best-practices/
-             * GTFS Realtime feeds should be refreshed at least once every 30 seconds, or whenever the information represented within the feed (position of a vehicle) changes
+             * Data within a GTFS Realtime feed should not be older than 90 seconds for Trip Updates and Vehicle Positions and not older than 10 minutes for Service Alerts. For example, even if a producer is continuously refreshing the FeedHeader.timestamp timestamp every 30 seconds, the age of VehiclePositions within that feed should not be older than 90 seconds.
              */
-            if (nowTsDiffEpoch <= 30000) {
+            //TODO Make this switch available per configuration!
+            if (nowTsDiffEpoch <= 90000) {
 
                 /**
                  * Create a new feed entity to wrap the vehicle position and add it to the
