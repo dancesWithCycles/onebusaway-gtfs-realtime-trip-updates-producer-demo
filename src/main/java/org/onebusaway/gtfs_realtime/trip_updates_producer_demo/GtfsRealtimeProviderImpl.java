@@ -16,8 +16,6 @@
 package org.onebusaway.gtfs_realtime.trip_updates_producer_demo;
 
 import com.google.transit.realtime.GtfsRealtime.*;
-import com.google.transit.realtime.GtfsRealtime.TripUpdate.StopTimeEvent;
-import com.google.transit.realtime.GtfsRealtime.TripUpdate.StopTimeUpdate;
 import de.swingbe.ifleet.controller.PgConnection;
 import de.swingbe.ifleet.controller.PgPrepStatement;
 import org.json.JSONException;
@@ -156,9 +154,8 @@ public class GtfsRealtimeProviderImpl {
 
         /**
          * The FeedMessage.Builder is what we will use to build up our GTFS-realtime
-         * feeds. We create a feed for both trip updates and vehicle positions.
+         * feeds. We create a feed for vehicle positions.
          */
-        FeedMessage.Builder tripUpdates = GtfsRealtimeLibrary.createFeedMessageBuilder();
         FeedMessage.Builder vehiclePositions = GtfsRealtimeLibrary.createFeedMessageBuilder();
 
         /**
@@ -197,33 +194,6 @@ public class GtfsRealtimeProviderImpl {
 
             VehicleDescriptor.Builder vehicleDescriptor = VehicleDescriptor.newBuilder();
             vehicleDescriptor.setId(lctMsgTenant);
-
-            /**
-             * To construct our TripUpdate, we create a stop-time arrival event for
-             * the next stop for the vehicle, with the specified arrival delay. We add
-             * the stop-time update to a TripUpdate builder, along with the trip and
-             * vehicle descriptors.
-             */
-            StopTimeEvent.Builder arrival = StopTimeEvent.newBuilder();
-            arrival.setDelay(delay * 60);
-
-            StopTimeUpdate.Builder stopTimeUpdate = StopTimeUpdate.newBuilder();
-            stopTimeUpdate.setArrival(arrival);
-            stopTimeUpdate.setStopId(stopId);
-
-            TripUpdate.Builder tripUpdate = TripUpdate.newBuilder();
-            tripUpdate.addStopTimeUpdate(stopTimeUpdate);
-            tripUpdate.setTrip(tripDescriptor);
-            tripUpdate.setVehicle(vehicleDescriptor);
-
-            /**
-             * Create a new feed entity to wrap the trip update and add it to the
-             * GTFS-realtime trip updates feed.
-             */
-            FeedEntity.Builder tripUpdateEntity = FeedEntity.newBuilder();
-            tripUpdateEntity.setId(lctMsgTrip);
-            tripUpdateEntity.setTripUpdate(tripUpdate);
-            tripUpdates.addEntity(tripUpdateEntity);
 
             /**
              * To construct our VehiclePosition, we create a position for the vehicle.
@@ -302,10 +272,8 @@ public class GtfsRealtimeProviderImpl {
         /**
          * Build out the final GTFS-realtime feed messagse and save them.
          */
-        _gtfsRealtimeProvider.setTripUpdates(tripUpdates.build());
         _gtfsRealtimeProvider.setVehiclePositions(vehiclePositions.build());
 
-        _log.info("setTripUpdates count: " + tripUpdates.getEntityCount());
         _log.info("setVehiclePositions count: " + vehiclePositions.getEntityCount());
     }
 
