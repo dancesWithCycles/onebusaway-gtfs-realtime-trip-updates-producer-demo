@@ -39,10 +39,6 @@ import com.google.inject.Module;
 
 public class GtfsRealtimeTripUpdatesProducerDemoMain {
 
-  private static final String ARG_TRIP_UPDATES_PATH = "tripUpdatesPath";
-
-  private static final String ARG_TRIP_UPDATES_URL = "tripUpdatesUrl";
-
   private static final String ARG_VEHICLE_POSITIONS_PATH = "vehiclePositionsPath";
 
   private static final String ARG_VEHICLE_POSITIONS_URL = "vehiclePositionsUrl";
@@ -86,17 +82,6 @@ public class GtfsRealtimeTripUpdatesProducerDemoMain {
 
     _provider.setUrl(new URL("http://www3.septa.org/hackathon/TrainView/"));
 
-    if (cli.hasOption(ARG_TRIP_UPDATES_URL)) {
-      URL url = new URL(cli.getOptionValue(ARG_TRIP_UPDATES_URL));
-      TripUpdatesServlet servlet = injector.getInstance(TripUpdatesServlet.class);
-      servlet.setUrl(url);
-    }
-    if (cli.hasOption(ARG_TRIP_UPDATES_PATH)) {
-      File path = new File(cli.getOptionValue(ARG_TRIP_UPDATES_PATH));
-      TripUpdatesFileWriter writer = injector.getInstance(TripUpdatesFileWriter.class);
-      writer.setPath(path);
-    }
-
     if (cli.hasOption(ARG_VEHICLE_POSITIONS_URL)) {
       URL url = new URL(cli.getOptionValue(ARG_VEHICLE_POSITIONS_URL));
       VehiclePositionsServlet servlet = injector.getInstance(VehiclePositionsServlet.class);
@@ -116,8 +101,6 @@ public class GtfsRealtimeTripUpdatesProducerDemoMain {
   }
 
   protected void buildOptions(Options options) {
-    options.addOption(ARG_TRIP_UPDATES_PATH, true, "trip updates path");
-    options.addOption(ARG_TRIP_UPDATES_URL, true, "trip updates url");
     options.addOption(ARG_VEHICLE_POSITIONS_PATH, true,
         "vehicle positions path");
     options.addOption(ARG_VEHICLE_POSITIONS_URL, true, "vehicle positions url");
