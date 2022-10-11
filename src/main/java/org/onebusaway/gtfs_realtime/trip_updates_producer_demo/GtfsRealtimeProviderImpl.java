@@ -138,7 +138,7 @@ public class GtfsRealtimeProviderImpl {
 
         if (pgCon.getConnection() == null) {
             pgCon.setConnection();
-            System.out.println("main() pgCon set");
+            _log.debug("main() pgCon set");
         }
 
         PgPrepStatement pgPrepStatement = new PgPrepStatement(pgCon);
@@ -313,7 +313,7 @@ public class GtfsRealtimeProviderImpl {
             try {
                 geoCoordFloat = Float.parseFloat(geoCoord);
             } catch (NumberFormatException e) {
-                _log.error("geoCoord2Float() geoCoord: " + geoCoord + " is NOT valid, msg: " + e.getMessage());
+                _log.info("geoCoord2Float() geoCoord: " + geoCoord + " is NOT valid, msg: " + e.getMessage());
                 return geoCoordFloat;
             }
             _log.debug("geoCoord2Float() geoCoordFloat: " + geoCoordFloat);
