@@ -171,15 +171,6 @@ public class GtfsRealtimeProviderImpl {
             String lctMsgTime = aryRecord.get(4);
             String lctMsgLat = aryRecord.get(5);
             String lctMsgLon = aryRecord.get(6);
-            String stopId = "stopId";
-            if (lctMsgLat.length() == 0 || lctMsgLon.length() == 0) {
-                //TODO add exception handling
-                lctMsgLat = "0";
-                lctMsgLon = "0";
-            }
-            double lat = Double.parseDouble(lctMsgLat);
-            double lon = Double.parseDouble(lctMsgLon);
-            int delay = 1;
 
             /**
              * We construct a TripDescriptor and VehicleDescriptor, which will be used
@@ -202,8 +193,8 @@ public class GtfsRealtimeProviderImpl {
              */
 
             Position.Builder position = Position.newBuilder();
-            position.setLatitude((float) lat);
-            position.setLongitude((float) lon);
+            position.setLatitude(geoCoord2Float(lctMsgLat));
+            position.setLongitude(geoCoord2Float(lctMsgLon));
 
             VehiclePosition.Builder vehiclePosition = VehiclePosition.newBuilder();
             vehiclePosition.setPosition(position);
@@ -224,6 +215,7 @@ public class GtfsRealtimeProviderImpl {
             try {
                 dateAsDate = simpleDateFormat.parse(timeAsString);
             } catch (ParseException e) {
+                _log.error("time string can NOT be parsed into a date");
                 e.printStackTrace();
             }
             //_log.debug("dateAsDate: " + dateAsDate.toString());
@@ -275,6 +267,59 @@ public class GtfsRealtimeProviderImpl {
         _gtfsRealtimeProvider.setVehiclePositions(vehiclePositions.build());
 
         _log.info("setVehiclePositions count: " + vehiclePositions.getEntityCount());
+    }
+
+    /**
+     * Convert IVU.fleet location message geo coordinate value from String to float
+     *
+     * @param geoCoord geo coordinate value to be converted from String to float
+     * @return geo coordinate as float
+     */
+    private float geoCoord2Float(String geoCoord) {
+        float geoCoordFloat = 0.0F;
+
+        if (geoCoord == null) {
+            _log.error("geoCoord2Float() null object detected, latitude ist set to invalid value");
+            return geoCoordFloat;
+        } else {
+            /**
+             * IVU.fleet handbook: WGS84 - gggnnnnnnn, Nachkommastellen nnnnnnn stets auf 7, Stellen aufgefüllt
+             */
+            int width = 7;
+            if (geoCoord.length() < width) {
+                char fill = '0';
+                String toPad = geoCoord;
+                String padded = new String(new char[width - toPad.length()]).replace('\0', fill) + toPad;
+                _log.debug("geoCoord2Float() padded: " + padded);
+                geoCoord = padded;
+            }
+            _log.debug("geoCoord2Float() geoCoord: " + geoCoord);
+
+            /**
+             * insert decimal point
+             */
+            // Creating an object of StringBuffer class
+            StringBuffer stringBuffer = new StringBuffer(geoCoord);
+            // insert() method where position of character to be
+            // inserted is specified as in arguments
+            stringBuffer.insert(geoCoord.length() - width, '.');
+            // Concatenated string
+            geoCoord = stringBuffer.toString();
+            _log.debug("geoCoord2Float() geoCoord: " + geoCoord);
+
+            /**
+             * convert to float
+             */
+            try {
+                geoCoordFloat = Float.parseFloat(geoCoord);
+            } catch (NumberFormatException e) {
+                _log.error("geoCoord2Float() geoCoord: " + geoCoord + " is NOT valid, msg: " + e.getMessage());
+                return geoCoordFloat;
+            }
+            _log.debug("geoCoord2Float() geoCoordFloat: " + geoCoordFloat);
+        }
+
+        return geoCoordFloat;
     }
 
     /**
